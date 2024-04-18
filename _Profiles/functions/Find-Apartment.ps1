@@ -12,10 +12,13 @@ Function Find-Apartment {
         [Parameter(Mandatory = $False)]$MaxPages = "1",
         [Parameter(Mandatory = $False)]$URL = "http://burlington.craigslist.org"
     )
+    $debugPreference = 'Continue'
+
     $AvailableRooms = @()
     For ($CurrentPage = 0; $CurrentPage -le $MaxPages; $CurrentPage++) {
         $WebPage = Invoke-WebRequest "$URL/search/roo?=roo&s=$Start&query=&zoomToPosting=&minAsk=$MinPrice&maxAsk=$MaxPrice&hasPic=1"
         $Results = $WebPage.ParsedHtml.body.innerHTML.Split("`n") | Where-Object -FilterScript { $_ -like "<P class=row*" }
+        Write-Debug "Webpage content: $($Wepage.Content)"
         ForEach ($Item in $Results) {
             $ItemObject = $ID = $Price = $DatePosted = $Neighborhood = $Link = $Description = $Email = $null
             $ID = ($Item -replace ".*pid\=`"", "") -replace "`".*"
