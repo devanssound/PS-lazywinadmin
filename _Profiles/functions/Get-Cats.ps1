@@ -1,4 +1,4 @@
-function View-Cats {
+function Get-Cats {
     <#
     .SYNOPSIS
         This will open Internet explorer and show a different cat every 5 seconds
