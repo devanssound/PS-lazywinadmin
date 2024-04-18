@@ -133,22 +133,29 @@ function Disable-RemoteDesktop {
                         Write-Verbose -Message (Get-DefaultMessage -Message "$Computer - Test-Connection")
                         IF (Test-Connection -Computer $Computer -count 1 -quiet) {
                             $Splatting = @{
-                                Class          = "Win32_TerminalServiceSetting"
+                                ClassName      = "Win32_TerminalServiceSetting"
                                 NameSpace      = "root\cimv2\terminalservices"
                                 ComputerName   = $Computer
-                                Authentication = 'PacketPrivacy'
                                 ErrorAction    = 'Stop'
-                                ErrorVariable  = 'ErrorProcessGetWmi'
+                                ErrorVariable  = 'ErrorProcessGetCim'
                             }
 
                             IF ($PSBoundParameters['Credential']) {
-                                $Splatting.credential = $Credential
+                                $Splatting.Add("Credential", $Credential)
                             }
-
+                            $CIMInstance = Get-CimInstance @Splatting
+                            $CIMInvokeSplatting = @{
+                                MethodNAme    = "SetAllowTSConnections"
+                                Arguments    = @{
+                                    AllowTSConnections    = 0
+                                    ModifyFirewallException = 0
+                                }
+                                ErrorACtion   = 'Stop'
+                                ErrorVariable = "ErrorProcessInvokeCim"
+                            }
                             # disable Remote Desktop
                             Write-Verbose -Message (Get-DefaultMessage -Message "$Computer - Get-WmiObject - disable Remote Desktop")
-                            (Get-WmiObject @Splatting).SetAllowTsConnections(0, 0) | Out-Null
-
+                            Invoke-CimMethod -InputObject $CIMInstance @CIMInvokeSplatting | Out-Null
                             # Disable requirement that user must be authenticated
                             #(Get-WmiObject -Class Win32_TSGeneralSetting @Splatting -Filter TerminalName='RDP-tcp').SetUserAuthenticationRequired(0)  Out-Null
                         }
@@ -156,6 +163,7 @@ function Disable-RemoteDesktop {
                     CATCH {
                         Write-Warning -Message (Get-DefaultMessage -Message "$Computer - Something wrong happened")
                         IF ($ErrorProcessGetWmi) { Write-Warning -Message (Get-DefaultMessage -Message "$Computer - Issue with Get-WmiObject") }
+                        IF ($ErrorProcessInvokeCim) { Write-Warning -Message (Get-DefaultMessage -Message "$Computer - Issue with Invoke-CimMethod") }
                         Write-Warning -MEssage $Error[0].Exception.Message
                     }
                     FINALLY {
