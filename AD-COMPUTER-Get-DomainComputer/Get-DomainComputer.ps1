@@ -84,9 +84,9 @@
 
         [Alias("RunAs")]
         [System.Management.Automation.Credential()]
-        $Credential = [System.Management.Automation.PSCredential]::Empty
-
-    )#PARAM
+        [PSCredential]
+        $Credential
+        )#PARAM
 
     PROCESS{
         IF ($ComputerName){
